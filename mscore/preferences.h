@@ -101,6 +101,7 @@ enum class MusicxmlExportBreaks : char {
 #define PREF_APP_STARTUP_STARTSCORE                         "application/startup/startScore"
 #define PREF_APP_WORKSPACE                                  "application/workspace"
 #define PREF_APP_BACKUP_GENERATE_BACKUP                     "application/backup/generateBackup"
+#define PREF_APP_BACKUP_BACKUP_DIR                          "application/backup/backupDir"
 #define PREF_EXPORT_AUDIO_NORMALIZE                         "export/audio/normalize"
 #define PREF_EXPORT_AUDIO_SAMPLERATE                        "export/audio/sampleRate"
 #define PREF_EXPORT_MP3_BITRATE                             "export/mp3/bitRate"
@@ -212,8 +213,6 @@ enum class MusicxmlExportBreaks : char {
 #define PREF_UI_BUTTON_HIGHLIGHT_COLOR_ENABLED_LIGHT_ON     "ui/button/highlight/color/enabled/light/on"
 #define PREF_UI_BUTTON_HIGHLIGHT_COLOR_ENABLED_LIGHT_OFF    "ui/button/highlight/color/enabled/light/off"
 
-
-
 class PreferenceVisitor;
 
 //---------------------------------------------------------
@@ -256,23 +255,29 @@ class BoolPreference : public Preference {
       virtual void accept(QString key, PreferenceVisitor&);
       };
 
-class StringPreference: public Preference {
+class StringPreference : public Preference {
    public:
       StringPreference(QString defaultValue, bool showInAdvancedList = true);
       virtual void accept(QString key, PreferenceVisitor&);
       };
 
-class ColorPreference: public Preference {
+class ColorPreference : public Preference {
    public:
       ColorPreference(QColor defaultValue, bool showInAdvancedList = true);
       virtual void accept(QString key, PreferenceVisitor&);
       };
 
 // Support for EnumPreference is currently not fully implemented
-class EnumPreference: public Preference {
+class EnumPreference : public Preference {
    public:
       EnumPreference(QVariant defaultValue, bool showInAdvancedList = true);
       virtual void accept(QString, PreferenceVisitor&);
+      };
+
+class PathPreference : public Preference {
+   public:
+      PathPreference(QString defaultValue, bool showInAdvancedList = true);
+      virtual void accept(QString key, PreferenceVisitor&);
       };
 
 //---------------------------------------------------------
@@ -396,6 +401,7 @@ class PreferenceVisitor {
       virtual void visit(QString key, BoolPreference*) = 0;
       virtual void visit(QString key, StringPreference*) = 0;
       virtual void visit(QString key, ColorPreference*) = 0;
+      virtual void visit(QString key, PathPreference*) = 0;
       };
 
 

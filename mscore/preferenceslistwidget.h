@@ -30,6 +30,7 @@ namespace Ms {
 //---------------------------------------------------------
 //   PreferenceItem
 //---------------------------------------------------------
+
 class PreferenceItem : public QTreeWidgetItem, public QObject {
 
       QString _name;
@@ -54,6 +55,7 @@ class PreferenceItem : public QTreeWidgetItem, public QObject {
 //---------------------------------------------------------
 //   BoolPreferenceItem
 //---------------------------------------------------------
+
 class BoolPreferenceItem : public PreferenceItem {
    private:
       bool _initialValue;
@@ -70,10 +72,10 @@ class BoolPreferenceItem : public PreferenceItem {
 
       };
 
-
 //---------------------------------------------------------
 //   IntPreferenceItem
 //---------------------------------------------------------
+
 class IntPreferenceItem : public PreferenceItem {
       int _initialValue;
       QSpinBox* _editor;
@@ -91,6 +93,7 @@ class IntPreferenceItem : public PreferenceItem {
 //---------------------------------------------------------
 //   DoublePreferenceItem
 //---------------------------------------------------------
+
 class DoublePreferenceItem : public PreferenceItem {
       double _initialValue;
       QDoubleSpinBox* _editor;
@@ -108,6 +111,7 @@ class DoublePreferenceItem : public PreferenceItem {
 //---------------------------------------------------------
 //   StringPreferenceItem
 //---------------------------------------------------------
+
 class StringPreferenceItem : public PreferenceItem {
       QString _initialValue;
       QLineEdit* _editor;
@@ -123,8 +127,43 @@ class StringPreferenceItem : public PreferenceItem {
       };
 
 //---------------------------------------------------------
+//   PathWidget
+//---------------------------------------------------------
+
+class PathWidget : public QWidget {
+      QToolButton* _button;
+      QLineEdit* _path;
+
+public:
+      PathWidget();
+
+      QToolButton* button() const { return _button; }
+      QLineEdit* path() const { return _path; }
+      };
+
+//---------------------------------------------------------
+//   PathPreferenceItem
+//---------------------------------------------------------
+
+class PathPreferenceItem : public PreferenceItem {
+      QString _initialValue;
+      PathWidget* _editor;
+
+public:
+      PathPreferenceItem(QString name);
+
+      void save();
+      void update();
+      void setDefaultValue();
+      PathWidget* editor() const { return _editor; }
+      bool isModified() const;
+      void selectDirectory();
+      };
+
+//---------------------------------------------------------
 //   ColorPreferenceItem
 //---------------------------------------------------------
+
 class ColorPreferenceItem : public PreferenceItem {
       QColor _initialValue;
       Awl::ColorLabel* _editor;
@@ -138,7 +177,6 @@ class ColorPreferenceItem : public PreferenceItem {
       QWidget* editor() const {return _editor;}
       bool isModified() const;
       };
-
 
 //---------------------------------------------------------
 //   PreferencesListWidget
@@ -163,8 +201,9 @@ class PreferencesListWidget : public QTreeWidget, public PreferenceVisitor {
       void visit(QString key, BoolPreference*);
       void visit(QString key, StringPreference*);
       void visit(QString key, ColorPreference*);
+      void visit(QString key, PathPreference*);
 
-};
+      };
 
 } // namespace Ms
 

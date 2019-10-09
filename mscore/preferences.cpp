@@ -104,6 +104,7 @@ void Preferences::init(bool storeInMemoryOnly)
             {PREF_APP_STARTUP_STARTSCORE,                          new StringPreference(":/data/My_First_Score.mscx", false)},
             {PREF_UI_APP_STARTUP_SHOWTOURS,                        new BoolPreference(true)},
             {PREF_APP_WORKSPACE,                                   new StringPreference("Basic", false)},
+            {PREF_APP_BACKUP_BACKUP_DIR,                           new PathPreference("")},
             {PREF_APP_BACKUP_GENERATE_BACKUP,                      new BoolPreference(true)},
             {PREF_EXPORT_AUDIO_NORMALIZE,                          new BoolPreference(true)},
             {PREF_EXPORT_AUDIO_SAMPLERATE,                         new IntPreference(44100, false)},
@@ -555,6 +556,13 @@ void EnumPreference::accept(QString, PreferenceVisitor&)
       {
       }
 
+PathPreference::PathPreference(QString defaultValue, bool showInAdvancedList)
+      : Preference(defaultValue, QMetaType::QString, showInAdvancedList)
+      {}
 
+void PathPreference::accept(QString key, PreferenceVisitor& v)
+      {
+      v.visit(key, this);
+      }
 
 } // namespace Ms

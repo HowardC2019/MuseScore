@@ -18,17 +18,18 @@
 //=============================================================================
 
 #include "preferenceslistwidget.h"
+#include "icons.h"
 #include <cfloat>
 
 namespace Ms {
-
 
 PreferencesListWidget::PreferencesListWidget(QWidget* parent)
       : QTreeWidget(parent)
       {
       setRootIsDecorated(false);
       setHeaderLabels(QStringList() << tr("Preference") << tr("Value"));
-      header()->setStretchLastSection(false);
+      header()->setStretchLastSection(true);
+      header()->setMinimumSectionSize(100);
       header()->setSectionResizeMode(0, QHeaderView::Stretch);
       setAccessibleName(tr("Advanced preferences"));
       setAccessibleDescription(tr("Access to more advanced preferences"));
@@ -93,6 +94,12 @@ void PreferencesListWidget::visit(QString key, ColorPreference*)
       addPreference(item);
       }
 
+void PreferencesListWidget::visit(QString key, PathPreference*)
+      {
+      PathPreferenceItem* item = new PathPreferenceItem(key);
+      addPreference(item);
+      }
+
 std::vector<QString> PreferencesListWidget::save()
       {
       std::vector<QString> changedPreferences;
@@ -112,8 +119,8 @@ std::vector<QString> PreferencesListWidget::save()
 //---------------------------------------------------------
 
 PreferenceItem::PreferenceItem()
-{
-}
+      {
+      }
 
 PreferenceItem::PreferenceItem(QString name)
       : _name(name)
@@ -163,7 +170,6 @@ bool ColorPreferenceItem::isModified() const
       return _initialValue != _editor->color();
       }
 
-
 //---------------------------------------------------------
 //   IntPreferenceItem
 //---------------------------------------------------------
@@ -171,12 +177,12 @@ bool ColorPreferenceItem::isModified() const
 IntPreferenceItem::IntPreferenceItem(QString name)
       : PreferenceItem(name),
         _initialValue(preferences.getInt(name))
-{
+      {
       _editor = new QSpinBox;
       _editor->setMaximum(INT_MAX);
       _editor->setMinimum(INT_MIN);
       _editor->setValue(_initialValue);
-}
+      }
 
 void IntPreferenceItem::save()
       {
@@ -195,7 +201,6 @@ void IntPreferenceItem::setDefaultValue()
       {
       _editor->setValue(preferences.defaultValue(name()).toInt());
       }
-
 
 bool IntPreferenceItem::isModified() const
       {
@@ -238,7 +243,6 @@ bool DoublePreferenceItem::isModified() const
       {
       return _initialValue != _editor->value();
       }
-
 
 //---------------------------------------------------------
 //   BoolPreferenceItem
@@ -310,6 +314,69 @@ bool StringPreferenceItem::isModified() const
       return _initialValue != _editor->text();
       }
 
+//---------------------------------------------------------
+//   PathWidget
+//---------------------------------------------------------
 
+PathWidget::PathWidget()
+      : QWidget(),
+      _button(new QToolButton),
+      _path(new QLineEdit)
+      {
+      QHBoxLayout* layout = new QHBoxLayout;
+      layout->addWidget(_button);
+      layout->addWidget(_path);
+      this->setLayout(layout);
+      }
+
+//---------------------------------------------------------
+//   PathPreferenceItem
+//---------------------------------------------------------
+
+PathPreferenceItem::PathPreferenceItem(QString name)
+      : PreferenceItem(name),
+      _initialValue(preferences.getString(name)),
+      // _browser(new QToolButton),
+      _editor(new PathWidget)
+      {
+      _editor->button()->setIcon(*icons[int(Icons::fileOpen_ICON)]);
+      connect(_editor->button(), &QToolButton::clicked, this, &PathPreferenceItem::selectDirectory);
+      _editor->path()->setText(_initialValue);
+      }
+
+void PathPreferenceItem::save()
+      {
+      QString newValue = _editor->path()->text();
+      _initialValue = newValue;
+      PreferenceItem::save(newValue);
+      }
+
+void PathPreferenceItem::update()
+      {
+      QString newValue = preferences.getString(name());
+      _editor->path()->setText(newValue);
+      }
+
+void PathPreferenceItem::setDefaultValue()
+      {
+      _editor->path()->setText(preferences.defaultValue(name()).toString());
+      }
+
+bool PathPreferenceItem::isModified() const
+      {
+      return _initialValue != _editor->path()->text();
+      }
+
+void PathPreferenceItem::selectDirectory()
+      {
+      QString s = QFileDialog::getExistingDirectory(
+            treeWidget(),
+            tr("Choose Directory"),
+            _editor->path()->text(),
+            QFileDialog::ShowDirsOnly | (preferences.getBool(PREF_UI_APP_USENATIVEDIALOGS) ? QFileDialog::Options() : QFileDialog::DontUseNativeDialog)
+      );
+      if (!s.isNull())
+            _editor->path()->setText(s);
+      }
 
 } // namespace Ms

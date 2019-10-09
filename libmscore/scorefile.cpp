@@ -371,7 +371,7 @@ void Score::readStaff(XmlReader& e)
 ///   Return true if OK and false on error.
 //---------------------------------------------------------
 
-bool MasterScore::saveFile(bool generateBackup)
+bool MasterScore::saveFile(bool generateBackup, QString backupDir)
       {
       if (readOnly())
             return false;
@@ -414,12 +414,13 @@ bool MasterScore::saveFile(bool generateBackup)
             // step 2
             // remove old backup file if exists
             //
-            QString backupName = QString(".") + info.fileName() + QString(",");
-            if (dir.exists(backupName)) {
-                  if (!dir.remove(backupName)) {
+            QDir actualBackupDir = backupDir.isEmpty() ? dir : backupDir;
+            QString backupBasename = QString(".") + basename + QString(",");
+            if (actualBackupDir.exists(backupBasename)) {
+                  if (!actualBackupDir.remove(backupBasename)) {
 //                      if (!MScore::noGui)
 //                            QMessageBox::critical(0, QObject::tr("Save File"),
-//                               tr("Removing old backup file %1 failed").arg(backupName));
+//                               tr("Removing old backup file %1 failed").arg(backupBasename));
                         }
                   }
 
@@ -428,14 +429,26 @@ bool MasterScore::saveFile(bool generateBackup)
             // rename old file into backup
             //
             if (dir.exists(basename)) {
-                  if (!dir.rename(basename, backupName)) {
-//                      if (!MScore::noGui)
-//                            QMessageBox::critical(0, tr("Save File"),
-//                               tr("Renaming old file <%1> to backup <%2> failed").arg(name, backupname);
+                  if (actualBackupDir == dir) {
+                        if (!dir.rename(basename, backupBasename)) {
+//                            if (!MScore::noGui)
+//                                  QMessageBox::critical(0, tr("Save File"),
+//                                  tr("Renaming old file <%1> to backup <%2> failed").arg(basename, backupname);
+                              }
+                        }
+                  else {
+                        // QFile(basename).copy(QFileInfo(backupName).absoluteFilePath());
+                        // QFile(basename).remove();
+                        QString backupName = QDir(actualBackupDir).filePath(backupBasename);
+                        if (!dir.rename(name, backupName)) {
+//                            if (!MScore::noGui)
+//                                  QMessageBox::critical(0, tr("Save File"),
+//                                  tr("Renaming old file <%1> to backup <%2> failed").arg(basename2, backupname2);
+                              }
                         }
                   }
 
-            QFileInfo fileBackup(dir, backupName);
+            QFileInfo fileBackup(dir, backupBasename);
             _sessionStartBackupInfo = fileBackup;
 
 #ifdef Q_OS_WIN

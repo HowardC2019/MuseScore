@@ -406,6 +406,10 @@ bool MuseScore::saveFile(MasterScore* score)
       {
       if (score == 0)
             return false;
+
+      bool generateBackup = preferences.getBool(PREF_APP_BACKUP_GENERATE_BACKUP);
+      QString backupDir = preferences.getString(PREF_APP_BACKUP_BACKUP_DIR);
+
       if (score->created()) {
             QString fn = score->masterScore()->fileInfo()->fileName();
             Text* t = score->getText(Tid::TITLE);
@@ -435,14 +439,14 @@ bool MuseScore::saveFile(MasterScore* score)
 
             mscore->lastSaveDirectory = score->masterScore()->fileInfo()->absolutePath();
 
-            if (!score->masterScore()->saveFile(preferences.getBool(PREF_APP_BACKUP_GENERATE_BACKUP))) {
+            if (!score->masterScore()->saveFile(generateBackup, backupDir)) {
                   QMessageBox::critical(mscore, tr("Save File"), MScore::lastError);
                   return false;
                   }
             addRecentScore(score);
             writeSessionFile(false);
             }
-      else if (!score->masterScore()->saveFile(preferences.getBool(PREF_APP_BACKUP_GENERATE_BACKUP))) {
+      else if (!score->masterScore()->saveFile(generateBackup, backupDir)) {
             QMessageBox::critical(mscore, tr("Save File"), MScore::lastError);
             return false;
             }
