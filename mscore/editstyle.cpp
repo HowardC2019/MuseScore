@@ -167,6 +167,7 @@ EditStyle::EditStyle(Score* s, QWidget* parent)
       { Sid::minMMRestWidth,          false, minMeasureWidth,         resetMinMMRestWidth },
       { Sid::hideEmptyStaves,         false, hideEmptyStaves,         0 },
       { Sid::dontHideStavesInFirstSystem, false, dontHideStavesInFirstSystem,             0 },
+      { Sid::bracketMinStaves,        false, bracketMinStaves,        resetBracketMinStaves },
       { Sid::hideInstrumentNameIfOneInstrument, false, hideInstrumentNameIfOneInstrument, 0 },
       { Sid::accidentalNoteDistance,  false, accidentalNoteDistance,  0 },
       { Sid::accidentalDistance,      false, accidentalDistance,      0 },

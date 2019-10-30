@@ -399,6 +399,7 @@ static const StyleType styleTypes[] {
       { Sid::hideEmptyStaves,         "hideEmptyStaves",         QVariant(false) },
       { Sid::dontHideStavesInFirstSystem,
                                  "dontHidStavesInFirstSystm",         QVariant(true) },
+      { Sid::bracketMinStaves,        "bracketMinStaves",        QVariant(2) },
       { Sid::hideInstrumentNameIfOneInstrument,
                                  "hideInstrumentNameIfOneInstrument", QVariant(true) },
       { Sid::gateTime,                "gateTime",                QVariant(100) },

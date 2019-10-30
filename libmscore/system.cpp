@@ -642,11 +642,19 @@ void System::layout2()
             // if end staff not visible, try prev staff
             while (staffIdx1 <= staffIdx2 && !_staves[staffIdx2]->show())
                   --staffIdx2;
+            int spannedStaves = staffIdx2 - staffIdx1 + 1;
+            for (int staffIdx = staffIdx1; staffIdx <= staffIdx2; ++staffIdx) {
+                  if (!_staves[staffIdx]->show())
+                        spannedStaves--;
+                  }
+            // it's user's choice to decide spanning to how many staves qualifies a bracket for being shown
+            // the decision is a score style "bracketMinStaves", referenced as BMS below
             // the bracket will be shown IF:
-            // it spans at least 2 visible staves (staffIdx1 < staffIdx2) OR
-            // it spans just one visible staff (staffIdx1 == staffIdx2) but it is required to do so
+            // it spans at least BMS visible staves OR
+            // it spans less than BMS visible staff but it is required to do so
             // (the second case happens at least when the bracket is initially dropped)
-            bool notHidden = (staffIdx1 < staffIdx2) || (b->span() == 1 && staffIdx1 == staffIdx2);
+            int bms = score()->styleI(Sid::bracketMinStaves);
+            bool notHidden = (spannedStaves >= bms) || (spannedStaves == b->span());
             if (notHidden) {                    // set vert. pos. and height to visible spanned staves
                   sy = _staves[staffIdx1]->bbox().top();
                   ey = _staves[staffIdx2]->bbox().bottom();
