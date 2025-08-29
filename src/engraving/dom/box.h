@@ -189,6 +189,7 @@ public:
     void init();
 
     void add(EngravingItem*) override;
+    void addAtIdx(FretDiagram* fretDiagram, size_t idx);
 
     double textScale() const { return m_textScale; }
     double diagramScale() const { return m_diagramScale; }
@@ -207,20 +208,34 @@ public:
     std::vector<PointF> gripsPositions(const EditData&) const override;
 
     void undoReorderElements(const StringList& newOrder);
-    StringList diagramsOrder() const { return m_diagramsOrder; }
+    const StringList& diagramsOrder() const { return m_diagramsOrder; }
 
-    ElementList orderedElements() const;
+    void undoSetInvisibleDiagrams(const StringList& invisibleDiagrams);
+    const StringList& invisibleDiagrams() const { return m_invisibleDiagrams; }
+
+    ElementList orderedElements(bool includeInvisible = false) const;
+
+    bool needsRebuild() const { return m_needsRebuild; }
+    void setNeedsRebuild(bool v) { m_needsRebuild = v; }
 
 private:
+
+    void updateDiagramsOrder(const StringList& currentDiagrams);
+    void updateInvisibleDiagrams(const StringList& currentDiagrams);
+    size_t computeInsertionIdx(const String& nameOfDiagramBeforeThis);
+
     double m_textScale = 0.0;
     double m_diagramScale = 0.0;
     Spatium m_columnGap;
     Spatium m_rowGap;
     int m_chordsPerRow = 0;
 
+    bool m_needsRebuild = false;
+
     AlignH m_contentAlignmentH = AlignH::HCENTER;
 
     StringList /*harmonyNames*/ m_diagramsOrder;
+    StringList /*harmonyNames*/ m_invisibleDiagrams;
 };
 
 //---------------------------------------------------------

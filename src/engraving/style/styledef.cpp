@@ -464,7 +464,7 @@ const std::array<StyleDef::StyleValue, size_t(Sid::STYLES)> StyleDef::styleValue
     styleDef(showMeasureNumberOne,                       false),
     styleDef(measureNumberInterval,                      PropertyValue(5)),
     styleDef(measureNumberSystem,                        true),
-    styleDef(measureNumberAllStaves,                     false),
+    styleDef(measureNumberPlacementMode,                 MeasureNumberPlacement::ABOVE_SYSTEM),
     styleDef(smallNoteMag,                               PropertyValue(.7)),
     styleDef(scaleRythmicSpacingForSmallNotes,           true),
     styleDef(graceNoteMag,                               PropertyValue(0.7)),
@@ -1526,6 +1526,7 @@ const std::array<StyleDef::StyleValue, size_t(Sid::STYLES)> StyleDef::styleValue
     styleDef(guitarBendArrowWidth,                       Spatium(1.0)),
     styleDef(guitarBendArrowHeight,                      Spatium(1.0)),
     styleDef(useCueSizeFretForGraceBends,                false),
+    styleDef(showFretOnFullBendRelease,                  true),
 
     styleDef(headerFontFace,                             "Edwin"),
     styleDef(headerFontSize,                             9.0),

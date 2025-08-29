@@ -3359,7 +3359,6 @@ void NotationInteraction::setDropRect(const RectF& rect)
     if (edd.dropTarget) {
         edd.dropTarget->setDropTarget(false);
         score()->addRefresh(edd.dropTarget->canvasBoundingRect());
-        edd.dropTarget = nullptr;
     } else if (!m_anchorLines.empty()) {
         RectF rf;
         rf.setTopLeft(m_anchorLines.front().p1());
@@ -5296,10 +5295,6 @@ void NotationInteraction::deleteSelection()
         return;
     }
 
-    //! NOTE: should be before start edit
-    //! In start edit we save the selection state
-    excludeElementsFromSelectionBeforeDelete();
-
     startEdit(TranslatableString("undoableAction", "Delete"));
 
     if (isTextEditingStarted()) {
@@ -6466,43 +6461,6 @@ bool NotationInteraction::needEndElementEditing(const std::vector<EngravingItem*
     }
 
     return newSelectedElements.front() != score()->selection().element();
-}
-
-void NotationInteraction::excludeElementsFromSelectionBeforeDelete()
-{
-    const std::vector<EngravingItem*> selectedElements = score()->selection().elements();
-    if (selectedElements.empty()) {
-        return;
-    }
-
-    // If there is Harmony or FretDiagram outside the fret box
-    // then the fret box will be rebuilt and we should exclude fret box's elements
-    bool hasHarmonyOrFretDiagramOutsideOfBox = false;
-
-    auto isInFretBox = [](const EngravingItem* item) {
-        if (item->isHarmony()) {
-            return static_cast<const Harmony*>(item)->isInFretBox();
-        } else if (item->isFretDiagram()) {
-            return static_cast<const FretDiagram*>(item)->isInFretBox();
-        }
-        return false;
-    };
-
-    for (const EngravingItem* element : selectedElements) {
-        if (!element->isHarmony() && !element->isFretDiagram()) {
-            continue;
-        }
-
-        hasHarmonyOrFretDiagramOutsideOfBox |= !isInFretBox(element);
-    }
-
-    for (EngravingItem* element : selectedElements) {
-        if (hasHarmonyOrFretDiagramOutsideOfBox
-            && (element->isHarmony() || element->isFretDiagram())
-            && isInFretBox(element)) {
-            score()->deselect(element);
-        }
-    }
 }
 
 void NotationInteraction::resetGripEdit()

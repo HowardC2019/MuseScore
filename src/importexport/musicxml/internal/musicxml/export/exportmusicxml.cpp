@@ -3356,6 +3356,8 @@ static String symIdToTechn(const SymId sid)
         return u"hand martellato";
     case SymId::handbellsMalletLft:
         return u"mallet lift";
+    case SymId::handbellsMalletBellSuspended:
+        return String(u"stopped smufl=\"%1\"").arg(String::fromAscii(SymNames::nameForSymId(sid).ascii()));
     case SymId::handbellsMalletBellOnTable:
         return u"mallet table";
     case SymId::handbellsMartellato:
@@ -3614,6 +3616,9 @@ void ExportMusicXml::chordAttributes(Chord* chord, Notations& notations, Technic
                 m_xml.startElementRaw(mxmlTechn);
                 m_xml.tag("natural");
                 m_xml.endElement();
+            } else if (sid == SymId::handbellsMalletBellSuspended) {
+                // special case for mallet bell suspended
+                m_xml.tagRaw(mxmlTechn);
             } else if (String::fromAscii(SymNames::nameForSymId(sid).ascii()).startsWith(u"handbells")) {
                 String handbell = u"handbell";
                 handbell += color2xml(a);
@@ -3684,9 +3689,10 @@ void ExportMusicXml::chordAttributes(Chord* chord, Notations& notations, Technic
             continue;
         }
 
-        SymId sid = a->symId();
+        const SymId sid = a->symId();
+        const AsciiStringView articText = TConv::toXml(a->textType());
         if (symIdToArtic(sid).empty()
-            && symIdToTechn(sid) == ""
+            && symIdToTechn(sid).empty()
             && !a->isOrnament() && !a->isTapping()
             && !isLaissezVibrer(sid)) {
             String otherArtic = u"other-articulation";
@@ -3699,11 +3705,16 @@ void ExportMusicXml::chordAttributes(Chord* chord, Notations& notations, Technic
                     otherArtic += u" placement=\"below\"";
                 }
             }
-            notations.tag(m_xml, a);
-            articulations.tag(m_xml);
-            AsciiStringView noteheadName = SymNames::nameForSymId(sid);
-            otherArtic += String(u" smufl=\"%1\"").arg(String::fromAscii(noteheadName.ascii()));
-            m_xml.tagRaw(otherArtic);
+            AsciiStringView articGlyph = SymNames::nameForSymId(sid);
+            if (!articGlyph.empty()) {
+                otherArtic += String(u" smufl=\"%1\"").arg(String::fromAscii(articGlyph.ascii()));
+            }
+            if (!articGlyph.empty() || !articText.empty()) {
+                notations.tag(m_xml, a);
+                articulations.tag(m_xml);
+                m_xml.tagRaw(otherArtic, articText);
+                articulations.etag(m_xml);
+            }
         }
     }
 }
@@ -3917,7 +3928,7 @@ static void writeBeam(XmlWriter& xml, ChordRest* const cr, Beam* const b)
 //   instrId
 //---------------------------------------------------------
 
-static String instrId(int partNr, int instrNr)
+static String instrId(size_t partNr, int instrNr)
 {
     return String(u"id=\"P%1-I%2\"").arg(partNr).arg(instrNr);
 }
@@ -4438,10 +4449,10 @@ void ExportMusicXml::chord(Chord* chord, staff_idx_t staff, const std::vector<Ly
         // instrument for multi-instrument or unpitched parts
         if (!useDrumset) {
             if (m_instrMap.size() > 1 && instNr >= 0) {
-                m_xml.tagRaw(String(u"instrument %1").arg(instrId(static_cast<int>(partNr) + 1, instNr + 1)));
+                m_xml.tagRaw(String(u"instrument %1").arg(instrId(partNr + 1, instNr + 1)));
             }
         } else {
-            m_xml.tagRaw(String(u"instrument %1").arg(instrId(static_cast<int>(partNr) + 1, note->pitch() + 1)));
+            m_xml.tagRaw(String(u"instrument %1").arg(instrId(partNr + 1, note->pitch() + 1)));
         }
 
         // voice
@@ -7129,7 +7140,7 @@ static int findPartGroupNumber(std::array<int, MAX_PART_GROUPS> partGroupEnd)
 //  scoreInstrument
 //---------------------------------------------------------
 
-static void scoreInstrument(XmlWriter& xml, const int partNr, const int instrNr, const String& instrName,
+static void scoreInstrument(XmlWriter& xml, const size_t partNr, const int instrNr, const String& instrName,
                             const Instrument* instr = nullptr)
 {
     xml.startElementRaw(String(u"score-instrument %1").arg(instrId(partNr, instrNr)));
@@ -7144,7 +7155,7 @@ static void scoreInstrument(XmlWriter& xml, const int partNr, const int instrNr,
 //  midiInstrument
 //---------------------------------------------------------
 
-static void midiInstrument(XmlWriter& xml, const int partNr, const int instrNr,
+static void midiInstrument(XmlWriter& xml, const size_t partNr, const int instrNr,
                            const Instrument* instr, const Score* score, const int unpitched = 0)
 {
     xml.startElementRaw(String(u"midi-instrument %1").arg(instrId(partNr, instrNr)));
@@ -7673,9 +7684,9 @@ static void partList(XmlWriter& xml, Score* score, MusicXmlInstrumentMap& instrM
             for (int i = 0; i < 128; ++i) {
                 DrumInstrument di = drumset->drum(i);
                 if (di.notehead != NoteHeadGroup::HEAD_INVALID) {
-                    scoreInstrument(xml, static_cast<int>(idx) + 1, i + 1, di.name);
+                    scoreInstrument(xml, idx + 1, i + 1, di.name);
                 } else if (muse::contains(pitches, i)) {
-                    scoreInstrument(xml, static_cast<int>(idx) + 1, i + 1, String(u"Instrument %1").arg(i + 1));
+                    scoreInstrument(xml, idx + 1, i + 1, String(u"Instrument %1").arg(i + 1));
                 }
             }
             int midiPort = part->midiPort() + 1;
@@ -7686,7 +7697,7 @@ static void partList(XmlWriter& xml, Score* score, MusicXmlInstrumentMap& instrM
             for (int i = 0; i < 128; ++i) {
                 DrumInstrument di = drumset->drum(i);
                 if (di.notehead != NoteHeadGroup::HEAD_INVALID || muse::contains(pitches, i)) {
-                    midiInstrument(xml, static_cast<int>(idx) + 1, i + 1, part->instrument(), score, i + 1);
+                    midiInstrument(xml, idx + 1, i + 1, part->instrument(), score, i + 1);
                 }
             }
         } else {
@@ -7694,7 +7705,7 @@ static void partList(XmlWriter& xml, Score* score, MusicXmlInstrumentMap& instrM
             initReverseInstrMap(rim, instrMap);
             for (int instNr : muse::keys(rim)) {
                 const Instrument* instr = rim.at(instNr);
-                scoreInstrument(xml, static_cast<int>(idx) + 1, instNr + 1,
+                scoreInstrument(xml, idx + 1, instNr + 1,
                                 MScoreTextToMusicXml::toPlainText(instr->trackName()),
                                 instr);
             }
@@ -7705,11 +7716,11 @@ static void partList(XmlWriter& xml, Score* score, MusicXmlInstrumentMap& instrM
                     midiPort = score->masterScore()->midiMapping(ii->second->channel(0)->channel())->port() + 1;
                 }
                 if (midiPort >= 1 && midiPort <= 16) {
-                    xml.tagRaw(String(u"midi-device %1 port=\"%2\"").arg(instrId(static_cast<int>(idx) + 1, instNr + 1)).arg(midiPort), "");
+                    xml.tagRaw(String(u"midi-device %1 port=\"%2\"").arg(instrId(idx + 1, instNr + 1)).arg(midiPort), "");
                 } else {
-                    xml.tagRaw(String(u"midi-device %1").arg(instrId(static_cast<int>(idx) + 1, instNr + 1)), "");
+                    xml.tagRaw(String(u"midi-device %1").arg(instrId(idx + 1, instNr + 1)), "");
                 }
-                midiInstrument(xml, static_cast<int>(idx) + 1, instNr + 1, rim.at(instNr), score);
+                midiInstrument(xml, idx + 1, instNr + 1, rim.at(instNr), score);
             }
         }
 
@@ -7948,11 +7959,11 @@ void ExportMusicXml::writeInstrumentChange(const InstrumentChange* instrChange)
 
     m_xml.startElement("sound");
     if (!instr->musicXmlId().empty()) {
-        m_xml.startElementRaw(String(u"instrument-change %1").arg(instrId(partNr + 1, instNr + 1)));
+        m_xml.startElementRaw(String(u"instrument-change %1").arg(instrId(static_cast<int>(partNr) + 1, instNr + 1)));
         m_xml.tag("instrument-sound", instr->musicXmlId());
         m_xml.endElement();
     } else {
-        m_xml.tagRaw(String(u"instrument-change %1").arg(instrId(partNr + 1, instNr + 1)));
+        m_xml.tagRaw(String(u"instrument-change %1").arg(instrId(static_cast<int>(partNr) + 1, instNr + 1)));
     }
     m_xml.endElement();
 }

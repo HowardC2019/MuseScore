@@ -475,7 +475,7 @@ enum class Sid {
     showMeasureNumberOne,
     measureNumberInterval,
     measureNumberSystem,
-    measureNumberAllStaves,
+    measureNumberPlacementMode,
 
     smallNoteMag,
     scaleRythmicSpacingForSmallNotes,
@@ -1543,6 +1543,7 @@ enum class Sid {
     guitarBendArrowWidth,
     guitarBendArrowHeight,
     useCueSizeFretForGraceBends,
+    showFretOnFullBendRelease,
 
     headerFontFace,
     headerFontSize,

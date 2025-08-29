@@ -338,7 +338,7 @@ void TLayout::layoutItem(EngravingItem* item, LayoutContext& ctx)
         layoutMarker(item_cast<const Marker*>(item), static_cast<Marker::LayoutData*>(ldata), ctx);
         break;
     case ElementType::MEASURE_NUMBER:
-        layoutMeasureNumber(item_cast<const MeasureNumber*>(item), static_cast<MeasureNumber::LayoutData*>(ldata), ctx);
+        layoutMeasureNumber(item_cast<MeasureNumber*>(item), static_cast<MeasureNumber::LayoutData*>(ldata), ctx);
         break;
     case ElementType::MEASURE_REPEAT:
         layoutMeasureRepeat(item_cast<const MeasureRepeat*>(item), static_cast<MeasureRepeat::LayoutData*>(ldata), ctx);
@@ -347,7 +347,7 @@ void TLayout::layoutItem(EngravingItem* item, LayoutContext& ctx)
         layoutMMRest(item_cast<const MMRest*>(item), static_cast<MMRest::LayoutData*>(ldata), ctx);
         break;
     case ElementType::MMREST_RANGE:
-        layoutMMRestRange(item_cast<const MMRestRange*>(item), static_cast<MMRestRange::LayoutData*>(ldata), ctx);
+        layoutMMRestRange(item_cast<MMRestRange*>(item), static_cast<MMRestRange::LayoutData*>(ldata), ctx);
         break;
     case ElementType::NOTE:
         layoutNote(item_cast<const Note*>(item), static_cast<Note::LayoutData*>(ldata));
@@ -1486,12 +1486,18 @@ void TLayout::layoutFBox(const FBox* item, FBox::LayoutData* ldata, const Layout
 {
     LAYOUT_CALL_ITEM(item);
 
+    if (item->needsRebuild()) {
+        const_cast<FBox*>(item)->init();
+        const_cast<FBox*>(item)->setNeedsRebuild(false);
+    }
+
     const System* parentSystem = item->system();
     LD_CONDITION(parentSystem->ldata()->isSetBbox());
 
     ldata->setPos(PointF());
 
-    const ElementList& elements = item->orderedElements();
+    const ElementList& elements = item->orderedElements(true /*includeInvisible*/);
+    const StringList& invisibleDiagrams = item->invisibleDiagrams();
 
     std::vector<FretDiagram*> fretDiagrams;
     for (EngravingItem* element : elements) {
@@ -1499,7 +1505,18 @@ void TLayout::layoutFBox(const FBox* item, FBox::LayoutData* ldata, const Layout
             continue;
         }
 
-        fretDiagrams.emplace_back(toFretDiagram(element));
+        FretDiagram* diagram = toFretDiagram(element);
+        if (muse::contains(invisibleDiagrams, diagram->harmony()->harmonyName().toLower())) {
+            //! NOTE: We need to layout the diagrams to get the harmony names to show in the UI
+            layoutItem(diagram, const_cast<LayoutContext&>(ctx));
+
+            //! but we don't need to draw them, so let's add a skip
+            diagram->mutldata()->setIsSkipDraw(true);
+            diagram->harmony()->mutldata()->setIsSkipDraw(true);
+            continue;
+        }
+
+        fretDiagrams.emplace_back(diagram);
     }
 
     //! NOTE: layout fret diagrams and calculate sizes
@@ -1515,6 +1532,10 @@ void TLayout::layoutFBox(const FBox* item, FBox::LayoutData* ldata, const Layout
         harmony->mutldata()->setMag(item->textScale());
 
         layoutItem(fretDiagram, const_cast<LayoutContext&>(ctx));
+
+        //! reset the skip wich was added above
+        fretDiagram->mutldata()->setIsSkipDraw(false);
+        harmony->mutldata()->setIsSkipDraw(false);
 
         double width = fretDiagram->ldata()->bbox().width();
         maxFretDiagramWidth = std::max(maxFretDiagramWidth, width);
@@ -4038,7 +4059,7 @@ void TLayout::layoutBaseMeasureBase(const MeasureBase* item, MeasureBase::Layout
     }
 }
 
-void TLayout::layoutMeasureNumber(const MeasureNumber* item, MeasureNumber::LayoutData* ldata, const LayoutContext& ctx)
+void TLayout::layoutMeasureNumber(MeasureNumber* item, MeasureNumber::LayoutData* ldata, const LayoutContext& ctx)
 {
     MeasureNumberLayout::layoutMeasureNumber(item,  ldata, ctx);
 }
@@ -4258,7 +4279,7 @@ void TLayout::layoutMMRest(const MMRest* item, MMRest::LayoutData* ldata, const 
     ChordLayout::fillShape(item, ldata, ctx.conf());
 }
 
-void TLayout::layoutMMRestRange(const MMRestRange* item, MMRestRange::LayoutData* ldata, const LayoutContext& ctx)
+void TLayout::layoutMMRestRange(MMRestRange* item, MMRestRange::LayoutData* ldata, const LayoutContext& ctx)
 {
     MeasureNumberLayout::layoutMMRestRange(item, ldata, ctx);
 }
